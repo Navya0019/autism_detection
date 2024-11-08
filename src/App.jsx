@@ -3,7 +3,9 @@ import './App.css';
 
 function App() {
   const [activeSection, setActiveSection] = useState('about');
+  const [servicesLoggedIn, setServicesLoggedIn] = useState(false);
   const [doctorLoggedIn, setDoctorLoggedIn] = useState(false);
+
 
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -37,7 +39,9 @@ const Services = () => {
     event.preventDefault();
     const generatedId = `ID-${Math.floor(Math.random() * 10000)}`;
     setUniqueId(generatedId);
-  
+    
+    
+
     const response = await fetch('http://localhost:8000/api/register/', {
       method: 'POST',
       headers: {
@@ -49,9 +53,12 @@ const Services = () => {
     if (response.ok) {
       const data = await response.json();
       console.log("Data saved successfully:", data);
+      
     } else {
       console.error('Failed to register patient');
     }
+
+    
   };
 
   return (
@@ -84,6 +91,7 @@ const Services = () => {
         <button type="submit">Register</button>
       </form>
       {uniqueId && <p>Your Unique Patient ID: {uniqueId}</p>}
+      
     </div>
   );
 };
@@ -294,19 +302,112 @@ const Services = () => {
       );
   };
   
+  const History = () => {
+    const [pregnancyDetails, setPregnancyDetails] = useState({
+        sugarLevel: '',
+        abortionHistory: '',
+        bmi: '',
+        bloodPressure: '',
+    });
+
+    const [birthMilestones, setBirthMilestones] = useState({
+        weight: '',
+        prematureBirth: '',
+        liftingHeadMonth: '',
+        rollingOverMonth: '',
+        sittingUpMonth: '',
+        crawlingMonth: '',
+        standingWithSupportMonth: '',
+        standingIndividuallyMonth: '',
+    });
+
+    const handlePregnancyDetailsChange = (field, value) => {
+        setPregnancyDetails((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleBirthMilestonesChange = (field, value) => {
+        setBirthMilestones((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleHistorySubmit = () => {
+        console.log("Submitted Pregnancy and Birth Details:", { pregnancyDetails, birthMilestones });
+        alert('History details submitted successfully!');
+    };
+
+    return (
+        <div className="history-content">
+            <h2>History</h2>
+
+            {/* Pregnancy Details Section */}
+            <div className="section pregnancy-details">
+                <h3>Pregnancy Details</h3>
+                <label>
+                    Sugar Level:
+                    <input type="text" value={pregnancyDetails.sugarLevel} onChange={(e) => handlePregnancyDetailsChange('sugarLevel', e.target.value)} />
+                </label>
+                <label>
+                    Abortion History:
+                    <input type="text" value={pregnancyDetails.abortionHistory} onChange={(e) => handlePregnancyDetailsChange('abortionHistory', e.target.value)} />
+                </label>
+                <label>
+                    BMI:
+                    <input type="text" value={pregnancyDetails.bmi} onChange={(e) => handlePregnancyDetailsChange('bmi', e.target.value)} />
+                </label>
+                <label>
+                    Blood Pressure:
+                    <input type="text" value={pregnancyDetails.bloodPressure} onChange={(e) => handlePregnancyDetailsChange('bloodPressure', e.target.value)} />
+                </label>
+            </div>
+
+            {/* Birth and Milestones Section */}
+            <div className="section birth-milestones">
+                <h3>Birth and Milestones</h3>
+                <label>
+                    Weight (at birth):
+                    <input type="text" value={birthMilestones.weight} onChange={(e) => handleBirthMilestonesChange('weight', e.target.value)} />
+                </label>
+                <label>
+                    Premature Birth (yes/no):
+                    <input type="text" value={birthMilestones.prematureBirth} onChange={(e) => handleBirthMilestonesChange('prematureBirth', e.target.value)} />
+                </label>
+                <label>
+                    Lifting Head (in months):
+                    <input type="number" value={birthMilestones.liftingHeadMonth} onChange={(e) => handleBirthMilestonesChange('liftingHeadMonth', e.target.value)} />
+                </label>
+                <label>
+                    Rolling Over (in months):
+                    <input type="number" value={birthMilestones.rollingOverMonth} onChange={(e) => handleBirthMilestonesChange('rollingOverMonth', e.target.value)} />
+                </label>
+                <label>
+                    Sitting Up (in months):
+                    <input type="number" value={birthMilestones.sittingUpMonth} onChange={(e) => handleBirthMilestonesChange('sittingUpMonth', e.target.value)} />
+                </label>
+                <label>
+                    Crawling (in months):
+                    <input type="number" value={birthMilestones.crawlingMonth} onChange={(e) => handleBirthMilestonesChange('crawlingMonth', e.target.value)} />
+                </label>
+                <label>
+                    Standing with Support (in months):
+                    <input type="number" value={birthMilestones.standingWithSupportMonth} onChange={(e) => handleBirthMilestonesChange('standingWithSupportMonth', e.target.value)} />
+                </label>
+                <label>
+                    Standing Individually (in months):
+                    <input type="number" value={birthMilestones.standingIndividuallyMonth} onChange={(e) => handleBirthMilestonesChange('standingIndividuallyMonth', e.target.value)} />
+                </label>
+            </div>
+
+            {/* Submit Button */}
+            <button onClick={handleHistorySubmit}>Submit History</button>
+        </div>
+    );
+};
 
   
 
   
 
 
-
-
-
-
-  
-
-  const DoctorLogin = () => {
+    const DoctorLogin = () => {
     const [loginName, setLoginName] = useState('');
     const [patientId, setPatientId] = useState('');
     const [doctorType, setDoctorType] = useState('');
@@ -371,6 +472,7 @@ const Services = () => {
         <ul>
           <li onClick={() => setActiveSection('about')} className="nav-item">About</li>
           <li onClick={() => setActiveSection('services')} className="nav-item">Register</li>
+          {<li onClick={() => setActiveSection('History')} className="nav-item">History</li>}
           <li onClick={() => setActiveSection('doctor-login')} className="nav-item">Doctor Login</li>
           {doctorLoggedIn && <li onClick={() => setActiveSection('assessment')} className="nav-item">Assessment</li>}
         </ul>
@@ -378,11 +480,14 @@ const Services = () => {
       <div className="content">
         {activeSection === 'about' && <About />}
         {activeSection === 'services' && <Services />}
+        {activeSection === 'History' && <History />}
         {activeSection === 'doctor-login' && <DoctorLogin />}
         {doctorLoggedIn && activeSection === 'assessment' && <Assessment />}
       </div>
     </div>
   );
+
+
 }
 
 export default App;
