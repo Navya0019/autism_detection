@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import './App.css';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 
 function App() {
-  const [activeSection, setActiveSection] = useState('about');
-  const [servicesLoggedIn, setServicesLoggedIn] = useState(false);
-  const [doctorLoggedIn, setDoctorLoggedIn] = useState(false);
+    const [activeSection, setActiveSection] = useState('about'); 
+    const [doctorLoggedIn, setDoctorLoggedIn] = useState(false); 
+    const [result, setResult] = useState(null);
 
 
   const [name, setName] = useState('');
@@ -22,11 +23,24 @@ function App() {
   const About = () => (
     <div>
       <h2>About Us</h2>
-      <p>This is an autism detection tool designed to help identify early signs of autism in children.</p>
+      <p>The Autism Detection app helps professionals assess and track autism spectrum disorders (ASD) across various age groups. It offers a secure, user-friendly platform for accurate diagnostics and improved patient outcomes.</p>
+
+<p>Copyright © 2024 Autism Detection. All rights reserved.</p>
     </div>
   );
 
-
+  const Result = ({ result }) => { 
+    const resultStyle = { color: result.prediction === 1 ? 'green' : result.prediction === 2 ? 'red' : 'black', };
+    return ( 
+    <div> 
+        
+    <h2>Prediction Result</h2> 
+    <p><strong>Patient ID:</strong> {result.patientId}</p> 
+    <p><strong>Age:</strong> {result.age}</p> 
+    <p><strong>Prediction:</strong> <span style={resultStyle}>{result.prediction === 1 ? 'Not Autistic' : 'Autistic'}</span></p>
+    <p><strong>Probability:</strong> {result.probability.join(', ')}</p> 
+    
+    </div> ); };
 
 
 const Services = () => {
@@ -103,12 +117,12 @@ const Services = () => {
 
 
   const Assessment = () => {
-      const [selectedCategory, setSelectedCategory] = useState('0-3');
+      const [selectedCategory, setSelectedCategory] = useState('13+');
       const [testResults, setTestResults] = useState({
-          '0-3': { ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '', DX_GROUP: '' },
-          '3-5': { FIQ: '', VIQ: '', ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '', DX_GROUP: '' },
-          '6-12': { FIQ: '', VIQ: '', PIQ: '', ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '', AQ_TOTAL: '', DX_GROUP: '' },
-          '13+': { FIQ: '', VIQ: '', PIQ: '', ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '', AQ_TOTAL: '', DX_GROUP: '' },
+          '0-3': { patientId:'',SEX:'',AGE:'',FIQ:'',VIQ:'',PIQ:'',ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '',AQ_TOTAL:'' },
+          '3-5': { patientId:'',SEX:'',AGE:'',FIQ: '', VIQ: '',PIQ:'', ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '',AQ_TOTAL:''},
+          '6-12': {patientId:'',SEX:'',AGE:'', FIQ: '', VIQ: '', PIQ: '', ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '', AQ_TOTAL: '' },
+          '13+': { patientId:'',SEX:'',AGE:'',FIQ: '', VIQ: '', PIQ: '', ADOS_TOTAL: '', ADOS_COMM: '', ADOS_SOCIAL: '', ADOS_STEREO_BEHAV: '', SRS_RAW_TOTAL: '', AQ_TOTAL: '' },
       });
   
       const handleCategoryClick = (category) => setSelectedCategory(category);
@@ -120,10 +134,37 @@ const Services = () => {
           }));
       };
   
-      const handleSubmit = () => {
-          console.log("Submitted Results:", testResults[selectedCategory]);
-          alert(`Results for ${selectedCategory} submitted successfully!`);
-      };
+      const handleSubmit = async () => {
+        const dataToSend = {
+            ...testResults[selectedCategory], // send only the selected category's data
+        };
+        console.log('Data to send:', dataToSend);
+        if (!dataToSend.AGE || isNaN(dataToSend.AGE)) {
+            alert('Please enter a valid ADOS_TOTAL value.');
+            return;
+        }
+    
+        try {
+            const response = await fetch('http://127.0.0.1:8000/model/predict-autism/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend),
+            });
+            
+            if (response.ok) {
+                
+                const result = await response.json(); 
+                setResult(result); // Set the result in state 
+                setActiveSection('result');
+            } else {
+                console.error('Failed to submit data:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error during submission:', error);
+        }
+    };
   
       return (
           <div className="assessment-content">
@@ -141,6 +182,30 @@ const Services = () => {
                   {/* Render inputs based on selected category */}
                   {selectedCategory === '0-3' && (
                       <>
+                        <label>
+                              patient_Id
+                              <input type="text" value={testResults['0-3'].patientId} onChange={(e) => handleTestResultChange('0-3', 'patientId', e.target.value)} />
+                          </label>
+                          <label>
+                              AGE:
+                              <input type="number" value={testResults['0-3'].AGE} onChange={(e) => handleTestResultChange('0-3', 'AGE', e.target.value)} />
+                          </label>
+                          <label>
+                              SEX (1 FOR MALE/ 2 FOR FEMALE):
+                              <input type="number" value={testResults['0-3'].SEX} onChange={(e) => handleTestResultChange('0-3', 'SEX', e.target.value)} />
+                          </label>
+                          <label>
+                              FIQ(PUT 0):
+                              <input type="number" value={testResults['0-3'].FIQ} onChange={(e) => handleTestResultChange('0-3', 'FIQ', e.target.value)} />
+                          </label>
+                          <label>
+                              VIQ(PUT 0):
+                              <input type="number" value={testResults['0-3'].VIQ} onChange={(e) => handleTestResultChange('0-3', 'VIQ', e.target.value)} />
+                          </label>
+                          <label>
+                              PIQ (PUT 0):
+                              <input type="number" value={testResults['0-3'].PIQ} onChange={(e) => handleTestResultChange('0-3', 'PIQ', e.target.value)} />
+                          </label>
                           <label>
                               ADOS_TOTAL:
                               <input type="number" value={testResults['0-3'].ADOS_TOTAL} onChange={(e) => handleTestResultChange('0-3', 'ADOS_TOTAL', e.target.value)} />
@@ -162,14 +227,27 @@ const Services = () => {
                               <input type="number" value={testResults['0-3'].SRS_RAW_TOTAL} onChange={(e) => handleTestResultChange('0-3', 'SRS_RAW_TOTAL', e.target.value)} />
                           </label>
                           <label>
-                              DX_GROUP:
-                              <input type="text" value={testResults['0-3'].DX_GROUP} onChange={(e) => handleTestResultChange('0-3', 'DX_GROUP', e.target.value)} />
+                              AQ_TOTAL:
+                              <input type="number" value={testResults['0-3'].AQ_TOTAL} onChange={(e) => handleTestResultChange('0-3', 'AQ_TOTAL', e.target.value)} />
                           </label>
+                          
                       </>
                   )}
   
                   {selectedCategory === '3-5' && (
                       <>
+                        <label>
+                              patient_Id
+                              <input type="text" value={testResults['3-5'].patientId} onChange={(e) => handleTestResultChange('3-5', 'patientId', e.target.value)} />
+                          </label>
+                          <label>
+                              AGE:
+                              <input type="number" value={testResults['3-5'].AGE} onChange={(e) => handleTestResultChange('3-5', 'AGE', e.target.value)} />
+                          </label>
+                          <label>
+                              SEX (1 FOR MALE/ 2 FOR FEMALE):
+                              <input type="number" value={testResults['3-5'].SEX} onChange={(e) => handleTestResultChange('3-5', 'SEX', e.target.value)} />
+                          </label>
                           <label>
                               FIQ:
                               <input type="number" value={testResults['3-5'].FIQ} onChange={(e) => handleTestResultChange('3-5', 'FIQ', e.target.value)} />
@@ -177,6 +255,10 @@ const Services = () => {
                           <label>
                               VIQ:
                               <input type="number" value={testResults['3-5'].VIQ} onChange={(e) => handleTestResultChange('3-5', 'VIQ', e.target.value)} />
+                          </label>
+                          <label>
+                              PIQ (PUT 0):
+                              <input type="number" value={testResults['3-5'].PIQ} onChange={(e) => handleTestResultChange('3-5', 'PIQ', e.target.value)} />
                           </label>
                           <label>
                               ADOS_TOTAL:
@@ -199,14 +281,27 @@ const Services = () => {
                               <input type="number" value={testResults['3-5'].SRS_RAW_TOTAL} onChange={(e) => handleTestResultChange('3-5', 'SRS_RAW_TOTAL', e.target.value)} />
                           </label>
                           <label>
-                              DX_GROUP:
-                              <input type="text" value={testResults['3-5'].DX_GROUP} onChange={(e) => handleTestResultChange('3-5', 'DX_GROUP', e.target.value)} />
+                              AQ_TOTAL:
+                              <input type="number" value={testResults['3-5'].AQ_TOTAL} onChange={(e) => handleTestResultChange('3-5', 'AQ_TOTAL', e.target.value)} />
                           </label>
+                          
                       </>
                   )}
   
                   {selectedCategory === '6-12' && (
                       <>
+                            <label>
+                              patient_Id
+                              <input type="text" value={testResults['6-12'].patientId} onChange={(e) => handleTestResultChange('6-12', 'patientId', e.target.value)} />
+                          </label>
+                          <label>
+                              AGE:
+                              <input type="number" value={testResults['6-12'].AGE} onChange={(e) => handleTestResultChange('6-12', 'AGE', e.target.value)} />
+                          </label>
+                          <label>
+                              SEX (1 FOR MALE/ 2 FOR FEMALE):
+                              <input type="number" value={testResults['6-12'].SEX} onChange={(e) => handleTestResultChange('6-12', 'SEX', e.target.value)} />
+                          </label>
                           <label>
                               FIQ:
                               <input type="number" value={testResults['6-12'].FIQ} onChange={(e) => handleTestResultChange('6-12', 'FIQ', e.target.value)} />
@@ -243,15 +338,24 @@ const Services = () => {
                               AQ_TOTAL:
                               <input type="number" value={testResults['6-12'].AQ_TOTAL} onChange={(e) => handleTestResultChange('6-12', 'AQ_TOTAL', e.target.value)} />
                           </label>
-                          <label>
-                              DX_GROUP:
-                              <input type="text" value={testResults['6-12'].DX_GROUP} onChange={(e) => handleTestResultChange('6-12', 'DX_GROUP', e.target.value)} />
-                          </label>
+                          
                       </>
                   )}
   
                   {selectedCategory === '13+' && (
                       <>
+                        <label>
+                              patient_Id
+                              <input type="text" value={testResults['13+'].patientId} onChange={(e) => handleTestResultChange('13+', 'patientId', e.target.value)} />
+                          </label>
+                          <label>
+                              AGE:
+                              <input type="number" value={testResults['13+'].AGE} onChange={(e) => handleTestResultChange('13+', 'AGE', e.target.value)} />
+                          </label>
+                          <label>
+                              SEX (1 FOR MALE/ 2 FOR FEMALE):
+                              <input type="number" value={testResults['13+'].SEX} onChange={(e) => handleTestResultChange('13+', 'SEX', e.target.value)} />
+                          </label>
                           <label>
                               FIQ:
                               <input type="number" value={testResults['13+'].FIQ} onChange={(e) => handleTestResultChange('13+', 'FIQ', e.target.value)} />
@@ -288,10 +392,7 @@ const Services = () => {
                               AQ_TOTAL:
                               <input type="number" value={testResults['13+'].AQ_TOTAL} onChange={(e) => handleTestResultChange('13+', 'AQ_TOTAL', e.target.value)} />
                           </label>
-                          <label>
-                              DX_GROUP:
-                              <input type="text" value={testResults['13+'].DX_GROUP} onChange={(e) => handleTestResultChange('13+', 'DX_GROUP', e.target.value)} />
-                          </label>
+                          
                       </>
                   )}
   
@@ -303,6 +404,7 @@ const Services = () => {
   };
   
   const History = () => {
+    const [patientID, setPatientID] = useState('');
     const [pregnancyDetails, setPregnancyDetails] = useState({
         sugarLevel: '',
         abortionHistory: '',
@@ -337,7 +439,12 @@ const Services = () => {
     return (
         <div className="history-content">
             <h2>History</h2>
-
+            {/* Patient ID Field */} 
+            <div className="section patient-id"> 
+                <label> 
+                    Patient ID: <input type="text" value={patientID} onChange={(e) => setPatientID(e.target.value)} /> 
+                </label> 
+            </div>
             {/* Pregnancy Details Section */}
             <div className="section pregnancy-details">
                 <h3>Pregnancy Details</h3>
@@ -363,7 +470,7 @@ const Services = () => {
             <div className="section birth-milestones">
                 <h3>Birth and Milestones</h3>
                 <label>
-                    Weight (at birth):
+                    Weight (at birth in kg):
                     <input type="text" value={birthMilestones.weight} onChange={(e) => handleBirthMilestonesChange('weight', e.target.value)} />
                 </label>
                 <label>
@@ -465,27 +572,28 @@ const Services = () => {
     );
   };
 
-  return (
-    <div className="app-container">
-      <nav>
-        <h2>Navigation</h2>
-        <ul>
-          <li onClick={() => setActiveSection('about')} className="nav-item">About</li>
-          <li onClick={() => setActiveSection('services')} className="nav-item">Register</li>
-          {<li onClick={() => setActiveSection('History')} className="nav-item">History</li>}
-          <li onClick={() => setActiveSection('doctor-login')} className="nav-item">Doctor Login</li>
-          {doctorLoggedIn && <li onClick={() => setActiveSection('assessment')} className="nav-item">Assessment</li>}
-        </ul>
-      </nav>
-      <div className="content">
-        {activeSection === 'about' && <About />}
-        {activeSection === 'services' && <Services />}
-        {activeSection === 'History' && <History />}
-        {activeSection === 'doctor-login' && <DoctorLogin />}
-        {doctorLoggedIn && activeSection === 'assessment' && <Assessment />}
-      </div>
-    </div>
-  );
+  return ( <div className="app-container"> 
+  <nav> 
+    <h2>Navigation</h2> 
+    <ul> 
+        <li onClick={() => setActiveSection('about')} className="nav-item">About</li> 
+        <li onClick={() => setActiveSection('services')} className="nav-item">Register</li> 
+        <li onClick={() => setActiveSection('History')} className="nav-item">History</li> 
+        <li onClick={() => setActiveSection('doctor-login')} className="nav-item">Doctor Login</li> 
+        {doctorLoggedIn && <li onClick={() => setActiveSection('assessment')} className="nav-item">Assessment</li>} 
+        <li onClick={() => setActiveSection('result')} className="nav-item">Result</li> 
+    </ul> 
+    </nav> 
+    <div className="content"> 
+            {activeSection === 'about' && <About />} 
+            {activeSection === 'services' && <Services />} 
+            {activeSection === 'History' && <History />} 
+            {activeSection === 'doctor-login' && <DoctorLogin setActiveSection={setActiveSection} />} 
+            {activeSection === 'result' && result && <Result result={result} />} 
+            {doctorLoggedIn && activeSection === 'assessment' && <Assessment setResult={setResult} />} 
+        </div> 
+    </div> 
+    );
 
 
 }
